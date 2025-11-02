@@ -1,30 +1,30 @@
 {
   "happy": {
-    "src": "brainrot/160107100400-monkey-selfie.jpg",
+    "src": "brainrot/goblin-laugh.jpg",
     "text": "You are radiating chaotic joy"
   },
   "sad": {
-    "src": "brainrot/images.jpeg",
+    "src": "brainrot/goblin-cry.jpg",
     "text": "Saddest brainrot energy"
   },
   "angry": {
-    "src": "brainrot/1280px-385188343_monkey.jpg",
+    "src": "brainrot/goblin-greed.jpg",
     "text": "Giga anger brainrot"
   },
   "surprised": {
-    "src": "brainrot/1649170666783.jpeg",
+    "src": "brainrot/goblin-tongue.png",
     "text": "Shook and brainrotten"
   },
   "neutral": {
-    "src": "brainrot/monkey-thinking-monkey.gif",
+    "src": "brainrot/goblin-laugh.jpg",
     "text": "Neutral simmering brainrot"
   },
   "disgusted": {
-    "src": "brainrot/monkey-thinking-monkey.gif",
+    "src": "brainrot/goblin-tongue.png",
     "text": "Weird vibe (fallback)"
   },
   "fearful": {
-    "src": "brainrot/monkey-thinking-monkey.gif",
+    "src": "brainrot/goblin-cry.jpg",
     "text": "Scared little brainrot"
   }
 }

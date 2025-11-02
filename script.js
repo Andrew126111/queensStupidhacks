@@ -12,20 +12,20 @@ const BRAINROT_MAP_URL = 'brainrotMap.json';
 
 // Map detected dominant expression to a meme file and caption (loaded from JSON)
 let brainrotMap = {
-  happy: {src:'brainrot/happy.gif', text:'You are radiating chaotic joy'},
-  sad: {src:'brainrot/sad.gif', text:'Saddest brainrot energy'},
-  angry: {src:'brainrot/angry.gif', text:'Giga anger brainrot'},
-  surprised: {src:'brainrot/surprised.gif', text:'Shook and brainrotten'},
-  neutral: {src:'brainrot/neutral.gif', text:'Neutral simmering brainrot'},
-  disgusted: {src:'brainrot/neutral.gif', text:'Weird vibe (fallback)'},
-  fearful: {src:'brainrot/neutral.gif', text:'Scared little brainrot'},
+  happy: {src:'brainrot/goblin-laugh.jpg', text:'You are radiating chaotic joy'},
+  sad: {src:'brainrot/goblin-cry.jpg', text:'Saddest brainrot energy'},
+  angry: {src:'brainrot/goblin-greed.jpg', text:'Giga anger brainrot'},
+  surprised: {src:'brainrot/goblin-tongue.png', text:'Shook and brainrotten'},
+  neutral: {src:'brainrot/goblin-laugh.jpg', text:'Neutral simmering brainrot'},
+  disgusted: {src:'brainrot/goblin-tongue.png', text:'Weird vibe (fallback)'},
+  fearful: {src:'brainrot/goblin-cry.jpg', text:'Scared little brainrot'},
 };
 
 // Load brainrotMap.json configuration
 async function loadBrainrotMap() {
   try {
     console.log('Loading brainrotMap.json...');
-    const response = await fetch(BRAINROT_MAP_URL);
+    const response = await fetch(`${BRAINROT_MAP_URL}?t=${Date.now()}`, { cache: 'no-cache' });
     if (!response.ok) {
       throw new Error(`Failed to load ${BRAINROT_MAP_URL}: ${response.status}`);
     }
@@ -39,6 +39,22 @@ async function loadBrainrotMap() {
     console.warn('Failed to load brainrotMap.json, using default map:', err);
     // Keep default map
   }
+}
+
+// Helper: set meme image with cache-busting and simple error fallback
+function setMeme(src, text) {
+  const cacheBusted = src + '?t=' + Date.now();
+  memeImg.onerror = () => {
+    console.error('Image failed to load, retrying without cache param:', cacheBusted);
+    memeImg.onerror = null;
+    memeImg.src = src; // fallback to raw src
+  };
+  memeImg.onload = () => {
+    // no-op, but keeps last onerror scoped to this load
+  };
+  memeImg.src = cacheBusted;
+  caption.textContent = text;
+  console.log('Meme set to:', src);
 }
 
 // Update manual mood dropdown to match loaded brainrotMap
@@ -69,8 +85,7 @@ function getDominantExpression(expressions) {
 // Function to apply mood (used by manual override)
 function applyMood(mood) {
   const map = brainrotMap[mood] || brainrotMap['neutral'];
-  memeImg.src = map.src;
-  caption.textContent = map.text;
+  setMeme(map.src, map.text);
   console.log('Manual mood applied:', mood, '->', map.src);
 }
 
@@ -125,6 +140,9 @@ async function setup() {
 
     caption.textContent = 'Models loaded — scanning...';
 
+    // Set initial image with cache-busting
+    setMeme(brainrotMap['neutral'].src, brainrotMap['neutral'].text);
+
     // 3) start background music
     try {
       backgroundMusic.volume = 0.5; // Set volume to 50%
@@ -174,10 +192,9 @@ async function detectLoop() {
         const manualMood = manualMoodSelect.value;
         const dominant = manualMood || getDominantExpression(result.expressions);
         const map = brainrotMap[dominant] || brainrotMap['neutral'];
-        const currentSrc = memeImg.src.split('/').pop();
+        const currentSrc = memeImg.src.split('/').pop().split('?')[0];
         if (currentSrc !== map.src.split('/').pop()) {
-          memeImg.src = map.src;
-          caption.textContent = map.text;
+          setMeme(map.src, map.text);
           const source = manualMood ? 'manual override' : 'detected';
           console.log(`Expression ${source}:`, dominant, '->', map.src);
         }
@@ -187,10 +204,9 @@ async function detectLoop() {
         if (manualMood) {
           // Use manual override even if no face detected
           const map = brainrotMap[manualMood] || brainrotMap['neutral'];
-          const currentSrc = memeImg.src.split('/').pop();
+          const currentSrc = memeImg.src.split('/').pop().split('?')[0];
           if (currentSrc !== map.src.split('/').pop()) {
-            memeImg.src = map.src;
-            caption.textContent = map.text;
+            setMeme(map.src, map.text);
             console.log('Manual override (no face):', manualMood, '->', map.src);
           }
         } else {
@@ -198,9 +214,9 @@ async function detectLoop() {
           caption.textContent = 'No face detected — strike a pose!';
           // optionally show neutral meme
           const map = brainrotMap['neutral'];
-          const currentSrc = memeImg.src.split('/').pop();
+          const currentSrc = memeImg.src.split('/').pop().split('?')[0];
           if (currentSrc !== map.src.split('/').pop()) {
-            memeImg.src = map.src;
+            setMeme(map.src, map.text);
           }
         }
       }

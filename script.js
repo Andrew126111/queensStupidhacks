@@ -4,6 +4,7 @@ const overlay = document.getElementById('overlay');
 const memeImg = document.getElementById('meme');
 const caption = document.getElementById('caption');
 const manualMoodSelect = document.getElementById('manualMood');
+const backgroundMusic = document.getElementById('backgroundMusic');
 const ctx = overlay.getContext && overlay.getContext('2d');
 
 const MODELS_URL = '/models'; // place face-api model files here
@@ -124,7 +125,17 @@ async function setup() {
 
     caption.textContent = 'Models loaded — scanning...';
 
-    // 3) run detection loop
+    // 3) start background music
+    try {
+      backgroundMusic.volume = 0.5; // Set volume to 50%
+      await backgroundMusic.play();
+      console.log('Background music started');
+    } catch (musicErr) {
+      console.warn('Could not start background music (may require user interaction):', musicErr);
+      // Music will play when user interacts with page
+    }
+
+    // 4) run detection loop
     detectLoop();
   } catch (err) {
     console.error('Setup error:', err);
@@ -213,6 +224,25 @@ function setupManualMoodControl() {
   }
 }
 
+// Start background music on first user interaction (fallback for autoplay restrictions)
+function setupBackgroundMusicFallback() {
+  const startMusic = async () => {
+    if (backgroundMusic && backgroundMusic.paused) {
+      try {
+        await backgroundMusic.play();
+        console.log('Background music started via user interaction');
+      } catch (err) {
+        console.warn('Failed to start background music:', err);
+      }
+    }
+  };
+  
+  // Try to start music on any user interaction (using once: true to auto-remove listeners)
+  ['click', 'touchstart', 'keydown'].forEach(event => {
+    document.addEventListener(event, startMusic, { once: true });
+  });
+}
+
 // Wait for face-api.js to be available
 function waitForFaceAPI(maxAttempts = 50, interval = 100) {
   return new Promise((resolve, reject) => {
@@ -246,6 +276,9 @@ window.addEventListener('load', async () => {
   
   // Setup manual mood control
   setupManualMoodControl();
+  
+  // Setup background music fallback for autoplay restrictions
+  setupBackgroundMusicFallback();
   
   setup();
 });

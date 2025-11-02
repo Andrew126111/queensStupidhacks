@@ -77,6 +77,10 @@ function setMeme(src, text) {
       goblinLaughSound.pause();
       goblinLaughSound.currentTime = 0;
     }
+    // Ensure 6-7 track is stopped
+    if (backgroundMusic) {
+      try { backgroundMusic.pause(); backgroundMusic.currentTime = 0; } catch (_) {}
+    }
   } else if (src.includes('goblin-laugh.jpg') && goblinLaughSound) {
     // Play goblin laugh sound if goblin-laugh.jpg is displayed
     goblinLaughSound.currentTime = 1; // Skip first 1 second, start from 1 second in
@@ -90,6 +94,26 @@ function setMeme(src, text) {
       goblinCrySound.pause();
       goblinCrySound.currentTime = 0;
     }
+    // Ensure 6-7 track is stopped
+    if (backgroundMusic) {
+      try { backgroundMusic.pause(); backgroundMusic.currentTime = 0; } catch (_) {}
+    }
+  } else if (src.includes('cr-67.jpg') && backgroundMusic) {
+    // Play 6-7 track for cr-67 emotion
+    try {
+      const desired = 'music/6-7-full.mp3';
+      const sourceEl = backgroundMusic.querySelector && backgroundMusic.querySelector('source');
+      if (sourceEl) { sourceEl.src = desired; } else { backgroundMusic.src = desired; }
+      backgroundMusic.loop = false;
+      backgroundMusic.currentTime = 0;
+      backgroundMusic.load();
+      backgroundMusic.play().catch(() => {});
+    } catch (e) {
+      console.warn('Failed to play 6-7 track:', e);
+    }
+    // Stop other sfx
+    if (goblinCrySound) { goblinCrySound.loop = false; goblinCrySound.pause(); }
+    if (goblinLaughSound) { goblinLaughSound.loop = false; goblinLaughSound.pause(); }
   } else {
     // Stop both sounds when other images are shown
     if (goblinCrySound) {
@@ -101,6 +125,13 @@ function setMeme(src, text) {
       goblinLaughSound.loop = false;
       goblinLaughSound.pause();
       goblinLaughSound.currentTime = 0;
+    }
+    // Also stop 6-7 track if playing
+    if (backgroundMusic) {
+      try {
+        backgroundMusic.pause();
+        backgroundMusic.currentTime = 0;
+      } catch (_) {}
     }
   }
 }

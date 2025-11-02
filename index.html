@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Brainrot Mirror</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- face-api.js from CDN (browser build) -->
+  <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <script defer src="script.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Brainrot Mirror</h1>
+  </header>
+
+  <main>
+    <section class="left">
+      <video id="video" autoplay playsinline muted></video>
+      <canvas id="overlay"></canvas>
+    </section>
+
+    <section class="right">
+      <div class="controls">
+        <label for="manualMood">Manual Override (for demos):</label>
+        <select id="manualMood">
+          <option value="">Auto (detect from face)</option>
+          <option value="happy">Happy</option>
+          <option value="sad">Sad</option>
+          <option value="angry">Angry</option>
+          <option value="surprised">Surprised</option>
+          <option value="neutral">Neutral</option>
+          <option value="disgusted">Disgusted</option>
+          <option value="fearful">Fearful</option>
+        </select>
+      </div>
+      <div class="meme-wrap">
+        <img id="meme" src="brainrot/monkey-thinking-monkey.gif" alt="brainrot meme" />
+        <div id="caption" class="caption">Awaiting vibe...</div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <small>Allow camera access when prompted. Put face-api model files in /models and your GIFs in /brainrot/</small>
+  </footer>
+</body>
+</html>

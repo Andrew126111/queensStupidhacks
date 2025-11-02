@@ -5,6 +5,8 @@ const memeImg = document.getElementById('meme');
 const caption = document.getElementById('caption');
 const manualMoodSelect = document.getElementById('manualMood');
 const backgroundMusic = document.getElementById('backgroundMusic');
+const goblinCrySound = document.getElementById('goblinCrySound');
+const goblinLaughSound = document.getElementById('goblinLaughSound');
 const ctx = overlay.getContext && overlay.getContext('2d');
 
 const MODELS_URL = '/models'; // place face-api model files here
@@ -55,6 +57,46 @@ function setMeme(src, text) {
   memeImg.src = cacheBusted;
   caption.textContent = text;
   console.log('Meme set to:', src);
+  
+  // Play goblin cry sound if goblin-cry.jpg is displayed
+  if (src.includes('goblin-cry.jpg') && goblinCrySound) {
+    goblinCrySound.currentTime = 1; // Skip first 1 second, start from 1 second in
+    goblinCrySound.loop = true; // Make it loop continuously
+    goblinCrySound.play().catch(err => {
+      console.warn('Could not play goblin cry sound:', err);
+    });
+    // Stop goblin laugh if it's playing
+    if (goblinLaughSound) {
+      goblinLaughSound.loop = false;
+      goblinLaughSound.pause();
+      goblinLaughSound.currentTime = 0;
+    }
+  } else if (src.includes('goblin-laugh.jpg') && goblinLaughSound) {
+    // Play goblin laugh sound if goblin-laugh.jpg is displayed
+    goblinLaughSound.currentTime = 1; // Skip first 1 second, start from 1 second in
+    goblinLaughSound.loop = true; // Make it loop continuously
+    goblinLaughSound.play().catch(err => {
+      console.warn('Could not play goblin laugh sound:', err);
+    });
+    // Stop goblin cry if it's playing
+    if (goblinCrySound) {
+      goblinCrySound.loop = false;
+      goblinCrySound.pause();
+      goblinCrySound.currentTime = 0;
+    }
+  } else {
+    // Stop both sounds when other images are shown
+    if (goblinCrySound) {
+      goblinCrySound.loop = false;
+      goblinCrySound.pause();
+      goblinCrySound.currentTime = 0;
+    }
+    if (goblinLaughSound) {
+      goblinLaughSound.loop = false;
+      goblinLaughSound.pause();
+      goblinLaughSound.currentTime = 0;
+    }
+  }
 }
 
 // Update manual mood dropdown to match loaded brainrotMap
@@ -143,15 +185,7 @@ async function setup() {
     // Set initial image with cache-busting
     setMeme(brainrotMap['neutral'].src, brainrotMap['neutral'].text);
 
-    // 3) start background music
-    try {
-      backgroundMusic.volume = 0.5; // Set volume to 50%
-      await backgroundMusic.play();
-      console.log('Background music started');
-    } catch (musicErr) {
-      console.warn('Could not start background music (may require user interaction):', musicErr);
-      // Music will play when user interacts with page
-    }
+    // 3) Background music disabled - not playing
 
     // 4) run detection loop
     detectLoop();
@@ -293,8 +327,7 @@ window.addEventListener('load', async () => {
   // Setup manual mood control
   setupManualMoodControl();
   
-  // Setup background music fallback for autoplay restrictions
-  setupBackgroundMusicFallback();
+  // Background music fallback removed - music is disabled
   
   setup();
 });

@@ -8,8 +8,8 @@
     "text": "Saddest brainrot energy"
   },
   "angry": {
-    "src": "brainrot/goblin-greed.jpg",
-    "text": "Giga anger brainrot"
+    "src": "brainrot/goblin-tongue.png",
+    "text": "Weird vibe (fallback)"
   },
   "surprised": {
     "src": "brainrot/goblin-tongue.png",
@@ -20,12 +20,16 @@
     "text": "Neutral simmering brainrot"
   },
   "disgusted": {
-    "src": "brainrot/goblin-tongue.png",
-    "text": "Weird vibe (fallback)"
+    "src": "brainrot/goblin-greed.jpg",
+    "text": "Giga anger brainrot"
   },
   "fearful": {
     "src": "brainrot/goblin-cry.jpg",
     "text": "Scared little brainrot"
+  },
+  "bothhands": {
+    "src": "brainrot/cr-67.jpg",
+    "text": "Both hands detected!"
   }
 }
 

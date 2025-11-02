@@ -9,15 +9,21 @@ const ctx = overlay.getContext && overlay.getContext('2d');
 
 const MODELS_URL = '/models'; // place face-api model files here
 const BRAINROT_MAP_URL = 'brainrotMap.json';
+const DISCOVERABLE_EMOTES = ['happy','sad','angry','surprised'];
+
+// Hand detection state
+let handsInstance = null;
+let lastHandsResults = null;
+let handBusy = false;
 
 // Map detected dominant expression to a meme file and caption (loaded from JSON)
 let brainrotMap = {
   happy: {src:'brainrot/goblin-laugh.jpg', text:'You are radiating chaotic joy'},
   sad: {src:'brainrot/goblin-cry.jpg', text:'Saddest brainrot energy'},
-  angry: {src:'brainrot/goblin-greed.jpg', text:'Giga anger brainrot'},
+  angry: {src:'brainrot/goblin-tongue.png', text:'Weird vibe (fallback)'},
   surprised: {src:'brainrot/goblin-tongue.png', text:'Shook and brainrotten'},
   neutral: {src:'brainrot/goblin-laugh.jpg', text:'Neutral simmering brainrot'},
-  disgusted: {src:'brainrot/goblin-tongue.png', text:'Weird vibe (fallback)'},
+  disgusted: {src:'brainrot/goblin-greed.jpg', text:'Giga anger brainrot'},
   fearful: {src:'brainrot/goblin-cry.jpg', text:'Scared little brainrot'},
 };
 
@@ -57,6 +63,24 @@ function setMeme(src, text) {
   console.log('Meme set to:', src);
 }
 
+// Persistence: discovered emotes in localStorage
+function getFoundEmotes() {
+  try {
+    return JSON.parse(localStorage.getItem('emotesFound') || '{}');
+  } catch (_) { return {}; }
+}
+function saveFoundEmotes(found) {
+  localStorage.setItem('emotesFound', JSON.stringify(found));
+}
+function recordEmoteFound(emote) {
+  if (!DISCOVERABLE_EMOTES.includes(emote)) return;
+  const found = getFoundEmotes();
+  if (found[emote]) return;
+  found[emote] = true;
+  saveFoundEmotes(found);
+  console.log('Emote discovered:', emote);
+}
+
 // Update manual mood dropdown to match loaded brainrotMap
 function updateManualMoodDropdown() {
   // Clear existing options except "Auto"
@@ -82,11 +106,100 @@ function getDominantExpression(expressions) {
   return best.name;
 }
 
+// Landmark helpers: add interpolated points along standard 68-landmark chains
+function getLandmarkChains() {
+  return [
+    // jawline
+    Array.from({length:17}, (_,i)=>i),
+    // left eyebrow
+    [17,18,19,20,21],
+    // right eyebrow
+    [22,23,24,25,26],
+    // nose bridge
+    [27,28,29,30],
+    // lower nose
+    [31,32,33,34,35],
+    // left eye
+    [36,37,38,39,40,41,36],
+    // right eye
+    [42,43,44,45,46,47,42],
+    // outer mouth
+    [48,49,50,51,52,53,54,55,56,57,58,59,48],
+    // inner mouth
+    [60,61,62,63,64,65,66,67,60]
+  ];
+}
+
+function drawLandmarksWithSubdivisions(ctx, points, subdivisions = 2) {
+  if (!ctx || !points || !points.length) return;
+  // original landmarks
+  ctx.fillStyle = 'rgba(0,200,255,0.9)';
+  for (const p of points) {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 1.8, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // interpolated points along chains
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  const chains = getLandmarkChains();
+  for (const chain of chains) {
+    for (let i = 0; i < chain.length - 1; i++) {
+      const a = points[chain[i]];
+      const b = points[chain[i+1]];
+      if (!a || !b) continue;
+      for (let s = 1; s <= subdivisions; s++) {
+        const t = s / (subdivisions + 1);
+        const x = a.x + (b.x - a.x) * t;
+        const y = a.y + (b.y - a.y) * t;
+        ctx.beginPath();
+        ctx.arc(x, y, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+}
+
+// Add denser hand points by interpolating between connections
+function drawHandWithSubdivisions(ctx, landmarks, canvas, subdivisions = 2, color = '#ffffff') {
+  if (!ctx || !landmarks || !Array.isArray(landmarks)) return;
+  const w = canvas.width, h = canvas.height;
+  try {
+    const pairs = (typeof HAND_CONNECTIONS !== 'undefined') ? HAND_CONNECTIONS : [];
+    // Base landmarks
+    ctx.fillStyle = color;
+    landmarks.forEach(p => {
+      const x = p.x * w;
+      const y = p.y * h;
+      ctx.beginPath();
+      ctx.arc(x, y, 1.8, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    // Interpolated points along each connection
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    for (const [aIdx, bIdx] of pairs) {
+      const a = landmarks[aIdx];
+      const b = landmarks[bIdx];
+      if (!a || !b) continue;
+      for (let s = 1; s <= subdivisions; s++) {
+        const t = s / (subdivisions + 1);
+        const x = (a.x + (b.x - a.x) * t) * w;
+        const y = (a.y + (b.y - a.y) * t) * h;
+        ctx.beginPath();
+        ctx.arc(x, y, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  } catch (e) {
+    // silent
+  }
+}
+
 // Function to apply mood (used by manual override)
 function applyMood(mood) {
   const map = brainrotMap[mood] || brainrotMap['neutral'];
   setMeme(map.src, map.text);
   console.log('Manual mood applied:', mood, '->', map.src);
+  recordEmoteFound(mood);
 }
 
 async function setup() {
@@ -140,6 +253,28 @@ async function setup() {
 
     caption.textContent = 'Models loaded — scanning...';
 
+    // 2.5) initialize MediaPipe Hands (if script is available)
+    if (typeof Hands !== 'undefined') {
+      console.log('Initializing MediaPipe Hands...');
+      handsInstance = new Hands({
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/${file}`
+      });
+      handsInstance.setOptions({
+        selfieMode: false,
+        maxNumHands: 2,
+        modelComplexity: 1,
+        minDetectionConfidence: 0.6,
+        minTrackingConfidence: 0.5
+      });
+      handsInstance.onResults((results) => {
+        lastHandsResults = results;
+      });
+      // start hands processing loop
+      startHandsLoop();
+    } else {
+      console.warn('MediaPipe Hands not available. Skipping hand detection.');
+    }
+
     // Set initial image with cache-busting
     setMeme(brainrotMap['neutral'].src, brainrotMap['neutral'].text);
 
@@ -162,7 +297,7 @@ async function setup() {
 }
 
 async function detectLoop() {
-  const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 });
+  const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.5 });
   console.log('Starting detection loop...');
   
   setInterval(async () => {
@@ -172,7 +307,10 @@ async function detectLoop() {
     }
 
     try {
-      const result = await faceapi.detectSingleFace(video, options).withFaceLandmarks(true).withFaceExpressions();
+      const result = await faceapi
+        .detectSingleFace(video, options)
+        .withFaceLandmarks(true)
+        .withFaceExpressions();
 
       // clear overlay
       if (ctx) ctx.clearRect(0,0,overlay.width,overlay.height);
@@ -181,27 +319,62 @@ async function detectLoop() {
         const dims = faceapi.matchDimensions(overlay, video, true);
         const resized = faceapi.resizeResults(result, dims);
 
-        // draw landmark points
+        // draw face landmark points (with interpolated midpoints for denser overlay)
         if (ctx) {
           const points = resized.landmarks.positions;
-          ctx.fillStyle = 'rgba(0,200,255,0.9)';
-          points.forEach(p => ctx.fillRect(p.x-1.5, p.y-1.5, 3, 3));
+          drawLandmarksWithSubdivisions(ctx, points, 2);
         }
 
-        // Check for manual override first
+        // draw hands (if last results available)
+        if (ctx && lastHandsResults && Array.isArray(lastHandsResults.multiHandLandmarks)) {
+          try {
+            const handsLm = lastHandsResults.multiHandLandmarks;
+            const handness = lastHandsResults.multiHandedness || [];
+            for (let i = 0; i < handsLm.length; i++) {
+              const lm = handsLm[i];
+              const isLeft = handness[i] && handness[i].label === 'Left';
+              const color = isLeft ? '#ff6464' : '#64ff64';
+              if (typeof drawConnectors !== 'undefined' && typeof drawLandmarks !== 'undefined' && typeof HAND_CONNECTIONS !== 'undefined') {
+                drawConnectors(ctx, lm, HAND_CONNECTIONS, { color, lineWidth: 4 });
+                drawLandmarks(ctx, lm, { color, lineWidth: 1, radius: 2 });
+              }
+              // Always add extra interpolated points for denser tracing
+              drawHandWithSubdivisions(ctx, lm, overlay, 2, color);
+            }
+          } catch (e) {
+            console.warn('Hand draw error:', e);
+          }
+        }
+
+        // Determine emotion, with two-hands override taking priority
         const manualMood = manualMoodSelect.value;
-        const dominant = manualMood || getDominantExpression(result.expressions);
+        const handsCount = (lastHandsResults && Array.isArray(lastHandsResults.multiHandLandmarks))
+          ? lastHandsResults.multiHandLandmarks.length
+          : 0;
+        const baseEmotion = manualMood || getDominantExpression(result.expressions);
+        const dominant = handsCount >= 2 ? 'bothhands' : baseEmotion;
         const map = brainrotMap[dominant] || brainrotMap['neutral'];
         const currentSrc = memeImg.src.split('/').pop().split('?')[0];
         if (currentSrc !== map.src.split('/').pop()) {
           setMeme(map.src, map.text);
-          const source = manualMood ? 'manual override' : 'detected';
+          const source = handsCount >= 2 ? 'hands override' : (manualMood ? 'manual override' : 'detected');
           console.log(`Expression ${source}:`, dominant, '->', map.src);
+          recordEmoteFound(dominant);
         }
       } else {
         // no face - check for manual override
         const manualMood = manualMoodSelect.value;
-        if (manualMood) {
+        const handsCount = (lastHandsResults && Array.isArray(lastHandsResults.multiHandLandmarks))
+          ? lastHandsResults.multiHandLandmarks.length
+          : 0;
+        if (handsCount >= 2) {
+          const map = brainrotMap['bothhands'] || brainrotMap['neutral'];
+          const currentSrc = memeImg.src.split('/').pop().split('?')[0];
+          if (currentSrc !== map.src.split('/').pop()) {
+            setMeme(map.src, map.text);
+            console.log('Hands override (no face): bothhands ->', map.src);
+          }
+        } else if (manualMood) {
           // Use manual override even if no face detected
           const map = brainrotMap[manualMood] || brainrotMap['neutral'];
           const currentSrc = memeImg.src.split('/').pop().split('?')[0];
@@ -225,6 +398,28 @@ async function detectLoop() {
       // Continue running even if one detection fails
     }
   }, 400); // every 400ms
+}
+
+function startHandsLoop() {
+  if (!handsInstance) return;
+  const loop = async () => {
+    if (!video || video.readyState < 2) {
+      requestAnimationFrame(loop);
+      return;
+    }
+    if (!handBusy) {
+      try {
+        handBusy = true;
+        await handsInstance.send({ image: video });
+      } catch (e) {
+        console.warn('Hands send error:', e);
+      } finally {
+        handBusy = false;
+      }
+    }
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
 }
 
 // Setup manual mood dropdown change handler

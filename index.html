@@ -7,6 +7,9 @@
   <link rel="stylesheet" href="style.css" />
   <!-- face-api.js from CDN (browser build) -->
   <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <!-- MediaPipe Hands (for hand detection) and drawing utils -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3.1675469244/drawing_utils.min.js"></script>
   <script defer src="script.js"></script>
 </head>
 <body>
@@ -18,6 +21,7 @@
     <section class="left">
       <video id="video" autoplay playsinline muted></video>
       <canvas id="overlay"></canvas>
+      <button id="openCollection" class="collection-btn">My Emote Collection</button>
     </section>
 
     <section class="right">
@@ -48,5 +52,14 @@
   <audio id="backgroundMusic" loop>
     <source src="music/background.mp3" type="audio/mpeg">
   </audio>
+  <script>
+    // Navigate to collection page
+    (function(){
+      var btn = document.getElementById('openCollection');
+      if (btn) {
+        btn.addEventListener('click', function(){ window.location.href = 'collection.html'; });
+      }
+    })();
+  </script>
 </body>
 </html>

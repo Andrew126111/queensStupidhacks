@@ -11,7 +11,7 @@ const ctx = overlay.getContext && overlay.getContext('2d');
 
 const MODELS_URL = '/models'; // place face-api model files here
 const BRAINROT_MAP_URL = 'brainrotMap.json';
-const DISCOVERABLE_EMOTES = ['happy','sad','angry','surprised'];
+const DISCOVERABLE_EMOTES = ['happy','sad','angry','surprised','bothhands'];
 
 // Hand detection state
 let handsInstance = null;
@@ -80,7 +80,7 @@ function setMeme(src, text) {
   } else if (src.includes('goblin-laugh.jpg') && goblinLaughSound) {
     // Play goblin laugh sound if goblin-laugh.jpg is displayed
     goblinLaughSound.currentTime = 1; // Skip first 1 second, start from 1 second in
-    goblinLaughSound.loop = true; // Make it loop continuously
+    goblinLaughSound.loop = false; // Make it loop continuously
     goblinLaughSound.play().catch(err => {
       console.warn('Could not play goblin laugh sound:', err);
     });
@@ -407,6 +407,7 @@ async function detectLoop() {
           if (currentSrc !== map.src.split('/').pop()) {
             setMeme(map.src, map.text);
             console.log('Hands override (no face): bothhands ->', map.src);
+            recordEmoteFound('bothhands');
           }
         } else if (manualMood) {
           // Use manual override even if no face detected

@@ -16,6 +16,10 @@
       <h2 style="font-size:16px;margin:6px 0 12px 0;color:#ddd">Goblins <span id="goblinsCount" class="collection-count">(0/4)</span></h2>
       <div class="collection-grid" id="goblinsGrid"></div>
     </section>
+    <section style="margin-top:18px">
+      <h2 style="font-size:16px;margin:6px 0 12px 0;color:#ddd">6 7 Special <span id="special67Count" class="collection-count">(0/1)</span></h2>
+      <div class="collection-grid" id="special67Grid"></div>
+    </section>
   </main>
   <script>
     const BRAINROT_MAP_URL = 'brainrotMap.json';
@@ -53,6 +57,25 @@
         grid.appendChild(card);
       });
       document.getElementById('goblinsCount').textContent = `(${count}/4)`;
+
+      // 6 7 Special section
+      const sGrid = document.getElementById('special67Grid');
+      sGrid.innerHTML = '';
+      const unlocked = !!found['bothhands'];
+      const card = document.createElement('div');
+      card.className = 'emote-card' + (unlocked ? '' : ' locked');
+      const img = document.createElement('img');
+      img.className = 'thumb';
+      img.alt = '6 7 Special';
+      const src = (map && map['bothhands'] && map['bothhands'].src) ? map['bothhands'].src : 'brainrot/cr-67.jpg';
+      img.src = src;
+      const title = document.createElement('div');
+      title.className = 'title';
+      title.textContent = '6 7 Special';
+      card.appendChild(img);
+      card.appendChild(title);
+      sGrid.appendChild(card);
+      document.getElementById('special67Count').textContent = `(${unlocked ? 1 : 0}/1)`;
     }
     loadMap().then(render).catch(err=>{
       console.error(err);

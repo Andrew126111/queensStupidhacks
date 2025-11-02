@@ -37,9 +37,40 @@ video, #meme{
   position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;
   border-radius:12px;
 }
+.left video, .left #overlay{ transform:scaleX(-1); transform-origin:center; }
 .meme-wrap{position:relative;width:100%}
 .caption{
   position:absolute;left:8px;right:8px;bottom:8px;background:rgba(0,0,0,0.45);
   color:#fff;padding:8px;border-radius:8px;font-weight:600;text-align:center;
 }
 footer{margin-top:18px;color:#999}
+
+/* Collection button */
+.collection-btn{
+  width:100%;padding:12px 16px;border-radius:12px;border:1px solid #2a2a2a;background:linear-gradient(180deg,#1f1f1f,#161616);color:#fff;cursor:pointer;font-weight:700;
+  box-shadow:0 6px 20px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04);
+  transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
+  letter-spacing:.2px;
+}
+.collection-btn::before{content:'🎭';margin-right:8px}
+.collection-btn::after{content:'→';margin-left:8px;opacity:.8;transition:transform .18s ease, opacity .18s ease}
+.collection-btn:hover{background:linear-gradient(180deg,#242424,#1a1a1a);border-color:#4a4a4a;box-shadow:0 10px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(10,170,255,0.15)}
+.collection-btn:hover::after{transform:translateX(3px);opacity:1}
+.collection-btn:active{transform:translateY(1px);box-shadow:0 6px 16px rgba(0,0,0,0.4)}
+
+/* Collection page layout */
+.container{max-width:1100px;margin:0 auto;padding:18px}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.back-link{color:#0af;text-decoration:none}
+.back-link:hover{text-decoration:underline}
+.collection-title{font-size:20px;color:#fff}
+.collection-count{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;background:rgba(10,170,255,0.12);color:#8fd6ff;border:1px solid rgba(10,170,255,0.25);font-size:12px;vertical-align:middle}
+.collection-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+
+/* Emote cards */
+.emote-card{position:relative;border-radius:14px;overflow:hidden;background:#111;box-shadow:0 10px 30px rgba(0,0,0,0.6);border:1px solid #262626;transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease}
+.emote-card:hover{transform:translateY(-2px);box-shadow:0 14px 34px rgba(0,0,0,0.65), 0 0 0 1px rgba(10,170,255,0.15);border-color:#3a3a3a}
+.emote-card .thumb{width:100%;display:block;aspect-ratio:1/1;object-fit:cover;background:#0f0f0f}
+.emote-card .title{position:absolute;left:0;right:0;bottom:0;padding:8px 10px;background:linear-gradient(180deg,rgba(0,0,0,0) 0%, rgba(0,0,0,0.55) 60%, rgba(0,0,0,0.8) 100%);color:#eaeaea;font-weight:700;text-align:center}
+.emote-card.locked::after{content:'🔒 Locked';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);color:#fff;font-weight:800;letter-spacing:.3px}
+.emote-card.locked .thumb{filter:grayscale(100%) brightness(0.55) blur(.5px)}

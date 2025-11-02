@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>My Emote Collection</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="container topbar">
+    <h1 class="collection-title">My Emote Collection</h1>
+    <a class="back-link" href="index.html">← Back to Mirror</a>
+  </header>
+  <main class="container">
+    <section>
+      <h2 style="font-size:16px;margin:6px 0 12px 0;color:#ddd">Goblins <span id="goblinsCount" class="collection-count">(0/4)</span></h2>
+      <div class="collection-grid" id="goblinsGrid"></div>
+    </section>
+  </main>
+  <script>
+    const BRAINROT_MAP_URL = 'brainrotMap.json';
+    const EMOTES = [
+      { key:'happy', label:'Happy' },
+      { key:'sad', label:'Sad' },
+      { key:'angry', label:'Angry' },
+      { key:'surprised', label:'Surprised' }
+    ];
+    function getFound(){ try { return JSON.parse(localStorage.getItem('emotesFound')||'{}'); } catch(e){ return {}; } }
+    async function loadMap(){
+      const res = await fetch(BRAINROT_MAP_URL + '?t=' + Date.now(), { cache:'no-cache' });
+      if(!res.ok) throw new Error('Failed to load brainrotMap.json');
+      return await res.json();
+    }
+    function render(map){
+      const grid = document.getElementById('goblinsGrid');
+      const found = getFound();
+      let count = 0;
+      EMOTES.forEach(({key,label})=>{
+        const info = map[key];
+        const unlocked = !!found[key];
+        if(unlocked) count++;
+        const card = document.createElement('div');
+        card.className = 'emote-card' + (unlocked ? '' : ' locked');
+        const img = document.createElement('img');
+        img.className = 'thumb';
+        img.alt = label;
+        img.src = (info && info.src) ? info.src : '';
+        const title = document.createElement('div');
+        title.className = 'title';
+        title.textContent = label;
+        card.appendChild(img);
+        card.appendChild(title);
+        grid.appendChild(card);
+      });
+      document.getElementById('goblinsCount').textContent = `(${count}/4)`;
+    }
+    loadMap().then(render).catch(err=>{
+      console.error(err);
+      // Fallback mapping if JSON fails
+      render({
+        happy:{src:'brainrot/goblin-laugh.jpg'},
+        sad:{src:'brainrot/goblin-cry.jpg'},
+        angry:{src:'brainrot/goblin-greed.jpg'},
+        surprised:{src:'brainrot/goblin-tongue.png'}
+      });
+    });
+  </script>
+</body>
+</html>
+

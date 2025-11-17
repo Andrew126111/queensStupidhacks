@@ -53,16 +53,16 @@ async function loadBrainrotMap() {
 function setMeme(src, text) {
   const cacheBusted = src + '?t=' + Date.now();
   memeImg.onerror = () => {
-    console.error('Image failed to load, retrying without cache param:', cacheBusted);
+    console.error('❌ Image failed to load, retrying without cache param:', cacheBusted);
     memeImg.onerror = null;
     memeImg.src = src; // fallback to raw src
   };
   memeImg.onload = () => {
-    // no-op, but keeps last onerror scoped to this load
+    console.log('✅ Image loaded successfully:', src);
   };
   memeImg.src = cacheBusted;
   caption.textContent = text;
-  console.log('Meme set to:', src);
+  console.log('🖼️ Setting meme to:', src, '| Caption:', text);
   
   // Play goblin cry sound if goblin-cry.jpg is displayed
   if (src.includes('goblin-cry.jpg') && goblinCrySound) {
@@ -176,6 +176,12 @@ function getDominantExpression(expressions) {
   for (const [name, value] of Object.entries(expressions)) {
     if (value > best.value) { best = {name, value}; }
   }
+  // Debug: log all expression values
+  console.log('Expression values:', Object.entries(expressions)
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, val]) => `${name}: ${(val * 100).toFixed(1)}%`)
+    .join(', '));
+  console.log('Selected:', best.name, `(${(best.value * 100).toFixed(1)}%)`);
   return best.name;
 }
 
@@ -420,11 +426,25 @@ async function detectLoop() {
         const dominant = handsCount >= 2 ? 'bothhands' : baseEmotion;
         const map = brainrotMap[dominant] || brainrotMap['neutral'];
         const currentSrc = memeImg.src.split('/').pop().split('?')[0];
-        if (currentSrc !== map.src.split('/').pop()) {
+        const newSrc = map.src.split('/').pop();
+        
+        // Debug logging
+        console.log('=== Detection Debug ===');
+        console.log('Expressions:', result.expressions);
+        console.log('Dominant expression:', baseEmotion);
+        console.log('Hands count:', handsCount);
+        console.log('Final dominant:', dominant);
+        console.log('Current image:', currentSrc);
+        console.log('New image:', newSrc);
+        console.log('Should switch?', currentSrc !== newSrc);
+        
+        if (currentSrc !== newSrc) {
           setMeme(map.src, map.text);
           const source = handsCount >= 2 ? 'hands override' : (manualMood ? 'manual override' : 'detected');
-          console.log(`Expression ${source}:`, dominant, '->', map.src);
+          console.log(`✅ Expression ${source}:`, dominant, '->', map.src);
           recordEmoteFound(dominant);
+        } else {
+          console.log('⏸️ Image unchanged (same as current)');
         }
       } else {
         // no face - check for manual override
